@@ -4,9 +4,12 @@ use std::time::Duration;
 use crossterm::{
     event::{self, Event, KeyCode}, execute, terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen}
 };
+
+use ratatui::widgets::Paragraph;
+
 use ratatui::{
     backend::CrosstermBackend,
-    layout::{Constraint, Direction, Layout},
+    layout::{Constraint, Direction, Layout, Alignment},
     style::{Color, Style},
     widgets::{Block, Borders, List, ListItem, ListState},
     Frame, Terminal,
@@ -60,11 +63,10 @@ impl App {
             ])
             .split(size);
 
-        // header block
-        let header = Block::default()
-            .title("brew buddy")
-            .borders(Borders::ALL);
-        frame.render_widget(header, outer[0]);
+        // title block
+        let title = Paragraph::new("brew buddy")
+                .alignment(Alignment::Center);
+        frame.render_widget(title, outer[0]);
 
         // tea menu block
         let teas = vec![
