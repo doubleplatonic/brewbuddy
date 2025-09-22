@@ -1,9 +1,8 @@
-use std::io;
+use std::io::{self, stdout};
 use std::time::Duration;
 
 use crossterm::{
-    event::{self, Event, KeyCode},
-    terminal::{disable_raw_mode, enable_raw_mode},
+    event::{self, Event, KeyCode}, execute, terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen}
 };
 use ratatui::{
     backend::CrosstermBackend,
@@ -23,7 +22,10 @@ pub struct App {
 impl App {
     // main loop
     pub fn run(&mut self, terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> io::Result<()> {
+
+        let mut stdout = stdout();
         enable_raw_mode()?; // enable raw mode for key events
+        execute!(stdout, EnterAlternateScreen)?; // take over the terminal
 
         loop {
             // draw UI
@@ -39,6 +41,7 @@ impl App {
         }
 
         disable_raw_mode()?; // restore terminal
+        execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
         Ok(())
     }
 
@@ -77,7 +80,9 @@ impl App {
 
         let tea_list = List::new(teas)
             .block(Block::default().title("tea menu").borders(Borders::ALL))
-            .highlight_style(Style::default().fg(Color::Yellow));
+            .highlight_style(Style::default()
+            .fg(Color::Black)
+            .bg(Color::LightRed));
         frame.render_stateful_widget(tea_list, outer[1], &mut state);
 
         // footer block
