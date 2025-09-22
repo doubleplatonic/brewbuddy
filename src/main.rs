@@ -46,26 +46,40 @@ impl App {
     // draw UI
     fn draw(&self, frame: &mut Frame<>) {
         let size = frame.size();
-
-        // layout: split vertically into two sections
-        let chunks = Layout::default()
+       // outer layout: split vertically into two setions
+       let outer_layout = Layout::default()
             .direction(Direction::Vertical)
             .margin(2)
-            .constraints([Constraint::Length(3), Constraint::Length(3)].as_ref())
+            .constraints([Constraint::Length(3), Constraint::Min(3)].as_ref())
             .split(size);
 
-        // welcome message!
-        let welcome = Paragraph::new("welcome to brew buddy! ^_^")
-            .block(Block::default().borders(Borders::ALL).title("brew buddie"))
+        // top section: welcome message
+        let welcome = Paragraph::new("welcome to brew buddy!")
+            .block(Block::default().borders(Borders::ALL).title("brew buddy"))
             .style(Style::default().fg(Color::Yellow));
-        frame.render_widget(welcome, chunks[0]);
+        frame.render_widget(welcome, outer_layout[0]);
 
-        // counter display (placeholder)
+        // bottom section inner layout (split horizontally)
+        let inner_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(vec![
+                Constraint::Percentage(50),
+                Constraint::Percentage(50),
+            ])
+            .split(outer_layout[1]);
+
+        // left inner widget: counter placeholder test thing
         let counter_text = format!("counter: {}", self.counter);
         let counter = Paragraph::new(counter_text)
             .block(Block::default().borders(Borders::ALL).title("counter"))
             .style(Style::default().fg(Color::Cyan));
-        frame.render_widget(counter, chunks[1]);
+        frame.render_widget(counter, inner_layout[0]);
+
+        // right inner widget: example placeholder
+        let inner_right = Paragraph::new("inner 1")
+            .block(Block::default().borders(Borders::ALL).title("placeholder"))
+            .style(Style::default().fg(Color::Gray));
+        frame.render_widget(inner_right, inner_layout[1]); 
     }
 
     // handle key events
