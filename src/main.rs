@@ -3,22 +3,21 @@ use std::time::Duration;
 
 use crossterm::{
     event::{self, Event, KeyCode},
-    terminal::{enable_raw_mode, disable_raw_mode},
+    terminal::{disable_raw_mode, enable_raw_mode},
 };
 use ratatui::{
     backend::CrosstermBackend,
-    Terminal,
-    widgets::{Block, Borders, Paragraph},
-    layout::{Layout, Constraint, Direction},
-    style::{Style, Color},
-    Frame,
+    layout::{Constraint, Direction, Layout},
+    style::{Color, Style},
+    widgets::{Block, Borders, List, ListItem, ListState},
+    Frame, Terminal,
 };
 
 // app state
 #[derive(Debug, Default)]
 pub struct App {
-    counter: u8,
     exit: bool,
+    selected: usize,
 }
 
 impl App {
@@ -29,7 +28,7 @@ impl App {
         loop {
             // draw UI
             terminal.draw(|f| self.draw(f))?;
-            
+
             // handle key presses
             self.handle_events()?;
 
@@ -46,55 +45,71 @@ impl App {
     // draw UI
     fn draw(&self, frame: &mut Frame<>) {
         let size = frame.size();
-       // outer layout: split vertically into two setions
-       let outer_layout = Layout::default()
+
+        // outer layout: split vertically into three sections
+        let outer = Layout::default()
             .direction(Direction::Vertical)
             .margin(2)
-            .constraints([Constraint::Length(3), Constraint::Min(3)].as_ref())
+            .constraints([
+                Constraint::Length(3),
+                Constraint::Min(5),
+                Constraint::Length(3),
+            ])
             .split(size);
 
-        // top section: welcome message
-        let welcome = Paragraph::new("welcome to brew buddy!")
-            .block(Block::default().borders(Borders::ALL).title("brew buddy"))
-            .style(Style::default().fg(Color::Yellow));
-        frame.render_widget(welcome, outer_layout[0]);
+        // header block
+        let header = Block::default()
+            .title("brew buddy")
+            .borders(Borders::ALL);
+        frame.render_widget(header, outer[0]);
 
-        // bottom section inner layout (split horizontally)
-        let inner_layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints(vec![
-                Constraint::Percentage(50),
-                Constraint::Percentage(50),
-            ])
-            .split(outer_layout[1]);
+        // tea menu block
+        let teas = vec![
+            ListItem::new("green tea"),
+            ListItem::new("black tea"),
+            ListItem::new("herbal tea"),
+            ListItem::new("jasmine tea"),
+            ListItem::new("[+ add a custom tea]"),
+        ];
 
-        // left inner widget: counter placeholder test thing
-        let counter_text = format!("counter: {}", self.counter);
-        let counter = Paragraph::new(counter_text)
-            .block(Block::default().borders(Borders::ALL).title("counter"))
-            .style(Style::default().fg(Color::Cyan));
-        frame.render_widget(counter, inner_layout[0]);
+        let mut state = ListState::default();
+        state.select(Some(self.selected.min(teas.len() - 1))); // make sure in bounds
 
-        // right inner widget: example placeholder
-        let inner_right = Paragraph::new("inner 1")
-            .block(Block::default().borders(Borders::ALL).title("placeholder"))
-            .style(Style::default().fg(Color::Gray));
-        frame.render_widget(inner_right, inner_layout[1]); 
+        let tea_list = List::new(teas)
+            .block(Block::default().title("tea menu").borders(Borders::ALL))
+            .highlight_style(Style::default().fg(Color::Yellow));
+        frame.render_stateful_widget(tea_list, outer[1], &mut state);
+
+        // footer block
+        let footer = Block::default()
+            .title("↑/↓ to move • enter to brew • q to quit")
+            .borders(Borders::ALL);
+        frame.render_widget(footer, outer[2]);
     }
 
-    // handle key events
     fn handle_events(&mut self) -> io::Result<()> {
         if event::poll(Duration::from_millis(100))? {
             if let Event::Key(key) = event::read()? {
                 match key.code {
-                    KeyCode::Char('q') => self.exit = true,                     // quit
-                    KeyCode::Right => self.counter = self.counter.saturating_add(1), // increment
-                    KeyCode::Left => self.counter = self.counter.saturating_sub(1), // decrement
+                    KeyCode::Char('q') => self.exit = true,
+                    KeyCode::Up => self.select_previous(),
+                    KeyCode::Down => self.select_next(),
                     _ => {}
                 }
             }
         }
         Ok(())
+    }
+
+    // proper methods for selection
+    fn select_previous(&mut self) {
+        if self.selected > 0 {
+            self.selected -= 1;
+        }
+    }
+
+    fn select_next(&mut self) {
+        self.selected += 1;
     }
 }
 
