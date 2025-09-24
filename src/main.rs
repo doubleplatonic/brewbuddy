@@ -57,17 +57,26 @@ impl App {
             .direction(Direction::Vertical)
             .margin(2)
             .constraints([
-                Constraint::Length(3),
-                Constraint::Min(5),
-                Constraint::Length(3),
+                Constraint::Length(3), // title
+                Constraint::Min(10), // main content
+                Constraint::Length(3), // footer
             ])
             .split(size);
 
         // title block
-        let title = Paragraph::new("brew buddy")
+        let title = Paragraph::new("welcome to brew buddy: your tea brewing companion!")
                 .alignment(Alignment::Center);
         frame.render_widget(title, outer[0]);
 
+        // middle section to split horizontally for tea list
+        let middle = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Percentage(50), // tea list
+                Constraint::Percentage(50), // journal
+            ])
+            .split(outer[1]);
+                    
         // tea menu block
         let teas = vec![
             ListItem::new("green tea"),
@@ -85,12 +94,16 @@ impl App {
             .highlight_style(Style::default()
             .fg(Color::Black)
             .bg(Color::LightRed));
-        frame.render_stateful_widget(tea_list, outer[1], &mut state);
+        frame.render_stateful_widget(tea_list, middle[0], &mut state);
+
+        let tea_journal = Block::default()
+                .title("tea journal")
+                .borders(Borders::ALL);
+        frame.render_widget(tea_journal, middle[1]);
 
         // footer block
-        let footer = Block::default()
-            .title("↑/↓ to move • enter to brew • q to quit")
-            .borders(Borders::ALL);
+        let footer = Paragraph::new("↑/↓ to move • enter to brew • q to quit")
+            .alignment(Alignment::Center);
         frame.render_widget(footer, outer[2]);
     }
 
